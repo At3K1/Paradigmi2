@@ -88,7 +88,7 @@ body {
 }
 
 .drink-list li.active {
-  background: var(--accent);
+  background: #fff;
   color: #111;
 }
 
@@ -119,25 +119,25 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: #fff;
   color: #111;
-  border-color: var(--accent);
+  border-color: #fff;
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: #e6e6e6;
+  border-color: #e6e6e6;
 }
 
 .btn-danger {
-  background: var(--danger);
-  color: #fff;
-  border-color: var(--danger);
+  background: #fff;
+  color: #111;
+  border-color: #fff;
 }
 
 .btn-danger:hover {
-  background: var(--danger-hover);
-  border-color: var(--danger-hover);
+  background: #e6e6e6;
+  border-color: #e6e6e6;
 }
 
 .btn-small {
@@ -169,7 +169,7 @@ body {
 
 .form-row input:focus,
 .form-row select:focus {
-  outline: 2px solid var(--accent);
+  outline: 2px solid #fff;
   outline-offset: -1px;
 }
 
