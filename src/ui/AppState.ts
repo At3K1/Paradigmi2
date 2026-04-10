@@ -1,4 +1,5 @@
 import { LocalStorageDrinkRepository } from '../services/LocalStorageDrinkRepository';
+import { seedIfEmpty } from '../services/seed';
 
 export class AppState {
   repo: LocalStorageDrinkRepository;
@@ -7,6 +8,7 @@ export class AppState {
 
   constructor() {
     this.repo = new LocalStorageDrinkRepository();
+    seedIfEmpty(this.repo);
     const all = this.repo.getAll();
     if (all.length > 0) {
       this.activeId = all[0].id;
