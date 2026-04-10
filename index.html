@@ -7,7 +7,40 @@
     <title>Лабораторная №2 — Напитки</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <header class="app-header">
+        <h1>Лабораторная №2 — Напитки</h1>
+      </header>
+      <main class="app-main">
+        <section class="panel panel-list" id="panel-list">
+          <div class="panel-header">
+            <h2>Напитки</h2>
+            <button type="button" id="btn-new-drink" class="btn btn-primary">
+              + Новый
+            </button>
+          </div>
+          <ul id="drink-list" class="drink-list"></ul>
+        </section>
+
+        <section class="panel panel-editor" id="panel-editor">
+          <div class="panel-header">
+            <h2>Редактор</h2>
+          </div>
+          <div id="editor-body" class="editor-body">
+            <p class="hint">Выбери напиток или создай новый.</p>
+          </div>
+        </section>
+
+        <section class="panel panel-preview" id="panel-preview">
+          <div class="panel-header">
+            <h2>Рецепт</h2>
+          </div>
+          <div id="preview-body" class="preview-body">
+            <p class="hint">Здесь появится рецепт.</p>
+          </div>
+        </section>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
