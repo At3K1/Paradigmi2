@@ -2,7 +2,7 @@ import { Drink } from '../models/Drink';
 import type { Element } from '../models/Element';
 
 export class DrinkRepository {
-  private drinks: Map<string, Drink> = new Map();
+  protected drinks: Map<string, Drink> = new Map();
 
   create(name: string, elements: Element[] = []): Drink {
     const trimmed = name.trim();
