@@ -35,6 +35,31 @@ export class DrinkEditorView {
     this.bodyEl.appendChild(this.renderElementsList(drink.elements));
     this.bodyEl.appendChild(this.renderAddIngredient());
     this.bodyEl.appendChild(this.renderAddAction());
+    this.bodyEl.appendChild(this.renderDeleteRow(drink.name));
+  }
+
+  private renderDeleteRow(name: string): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'form-row';
+    row.style.marginTop = '1.5rem';
+    row.style.borderTop = '1px solid var(--border)';
+    row.style.paddingTop = '1rem';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-danger';
+    btn.textContent = 'Удалить напиток';
+    btn.addEventListener('click', () => {
+      if (this.state.activeId === null) return;
+      const ok = confirm(`Удалить напиток «${name}»? Это действие нельзя отменить.`);
+      if (!ok) return;
+      const id = this.state.activeId;
+      this.state.repo.delete(id);
+      const remaining = this.state.repo.getAll();
+      this.state.setActive(remaining.length > 0 ? remaining[0].id : null);
+    });
+    row.appendChild(btn);
+    return row;
   }
 
   private renderNameRow(name: string): HTMLElement {
