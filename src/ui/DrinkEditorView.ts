@@ -32,9 +32,12 @@ export class DrinkEditorView {
     }
 
     this.bodyEl.appendChild(this.renderNameRow(drink.name));
-    this.bodyEl.appendChild(this.renderElementsList(drink.elements));
-    this.bodyEl.appendChild(this.renderAddIngredient());
-    this.bodyEl.appendChild(this.renderAddAction());
+    this.bodyEl.appendChild(
+      this.renderElementsTree(drink.elements, () => this.save()),
+    );
+    this.bodyEl.appendChild(
+      this.renderAddControls(drink.elements, () => this.save()),
+    );
     this.bodyEl.appendChild(this.renderDeleteRow(drink.name));
   }
 
@@ -51,7 +54,9 @@ export class DrinkEditorView {
     btn.textContent = 'Удалить напиток';
     btn.addEventListener('click', () => {
       if (this.state.activeId === null) return;
-      const ok = confirm(`Удалить напиток «${name}»? Это действие нельзя отменить.`);
+      const ok = confirm(
+        `Удалить напиток «${name}»? Это действие нельзя отменить.`,
+      );
       if (!ok) return;
       const id = this.state.activeId;
       this.state.repo.delete(id);
@@ -85,19 +90,26 @@ export class DrinkEditorView {
     return row;
   }
 
-  private renderElementsList(elements: Element[]): HTMLElement {
+  private renderElementsTree(
+    elements: Element[],
+    onChanged: () => void,
+    depth: number = 0,
+  ): HTMLElement {
     const wrap = document.createElement('div');
-    wrap.className = 'elements-list';
-    const title = document.createElement('h3');
-    title.textContent = 'Элементы';
-    title.style.fontSize = '0.95rem';
-    title.style.margin = '0.5rem 0';
-    wrap.appendChild(title);
+
+    if (depth === 0) {
+      const title = document.createElement('h3');
+      title.textContent = 'Элементы';
+      title.style.fontSize = '0.95rem';
+      title.style.margin = '0.5rem 0';
+      wrap.appendChild(title);
+    }
 
     if (elements.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'hint';
-      empty.textContent = 'Пока нет элементов.';
+      empty.style.paddingLeft = depth > 0 ? '1rem' : '0';
+      empty.textContent = depth === 0 ? 'Пока нет элементов.' : '(пусто)';
       wrap.appendChild(empty);
       return wrap;
     }
@@ -106,152 +118,151 @@ export class DrinkEditorView {
     ul.style.listStyle = 'none';
     ul.style.padding = '0';
     ul.style.margin = '0';
+    if (depth > 0) {
+      ul.style.marginLeft = '1rem';
+      ul.style.borderLeft = '2px solid var(--border)';
+      ul.style.paddingLeft = '0.5rem';
+    }
 
     elements.forEach((el, index) => {
       const li = document.createElement('li');
-      li.style.display = 'flex';
-      li.style.alignItems = 'center';
-      li.style.gap = '0.4rem';
-      li.style.padding = '0.35rem 0.5rem';
-      li.style.background = 'var(--bg-panel-2)';
-      li.style.borderRadius = '6px';
       li.style.marginBottom = '0.35rem';
+
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.gap = '0.4rem';
+      row.style.padding = '0.35rem 0.5rem';
+      row.style.background = 'var(--bg-panel-2)';
+      row.style.borderRadius = '0';
 
       const label = document.createElement('span');
       label.style.flex = '1';
-      const tag = el instanceof Ingredient ? '🧂' : el instanceof Action ? '⚙️' : '•';
-      label.textContent = `${tag} ${el.describe()}`;
-      li.appendChild(label);
+      const isAction = el instanceof Action;
+      const isIngredient = el instanceof Ingredient;
+      const tag = isIngredient ? '[И]' : isAction ? '[Д]' : '•';
+      label.textContent = isAction
+        ? `${tag} ${el.name}`
+        : `${tag} ${el.describe()}`;
+      row.appendChild(label);
 
-      const upBtn = this.makeBtn('↑', () => this.move(index, index - 1));
+      const upBtn = this.makeBtn('↑', () => {
+        if (index === 0) return;
+        const [item] = elements.splice(index, 1);
+        elements.splice(index - 1, 0, item);
+        onChanged();
+      });
       upBtn.disabled = index === 0;
-      const downBtn = this.makeBtn('↓', () => this.move(index, index + 1));
+
+      const downBtn = this.makeBtn('↓', () => {
+        if (index === elements.length - 1) return;
+        const [item] = elements.splice(index, 1);
+        elements.splice(index + 1, 0, item);
+        onChanged();
+      });
       downBtn.disabled = index === elements.length - 1;
-      const delBtn = this.makeBtn('✕', () => this.removeAt(index));
+
+      const delBtn = this.makeBtn('X', () => {
+        elements.splice(index, 1);
+        onChanged();
+      });
       delBtn.classList.add('btn-danger');
 
-      li.appendChild(upBtn);
-      li.appendChild(downBtn);
-      li.appendChild(delBtn);
+      row.appendChild(upBtn);
+      row.appendChild(downBtn);
+      row.appendChild(delBtn);
+      li.appendChild(row);
+
+      if (isAction) {
+        const action = el as Action;
+        li.appendChild(
+          this.renderElementsTree(action.elements, onChanged, depth + 1),
+        );
+        li.appendChild(
+          this.renderAddControls(action.elements, onChanged, depth + 1),
+        );
+      }
+
       ul.appendChild(li);
     });
+
     wrap.appendChild(ul);
     return wrap;
   }
 
-  private renderAddIngredient(): HTMLElement {
-    const row = document.createElement('div');
-    row.className = 'form-row';
-    const label = document.createElement('label');
-    label.textContent = 'Добавить ингредиент';
+  private renderAddControls(
+    targetArray: Element[],
+    onChanged: () => void,
+    depth: number = 0,
+  ): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex';
+    wrap.style.gap = '0.3rem';
+    wrap.style.flexWrap = 'nowrap';
+    wrap.style.alignItems = 'center';
+    wrap.style.marginBottom = depth === 0 ? '0.5rem' : '0.25rem';
+    if (depth > 0) {
+      wrap.style.marginLeft = '1rem';
+      wrap.style.paddingLeft = '0.5rem';
+    }
 
-    const controls = document.createElement('div');
-    controls.style.display = 'flex';
-    controls.style.gap = '0.4rem';
-
-    const select = document.createElement('select');
+    const ingSelect = document.createElement('select');
     for (const opt of INGREDIENT_OPTIONS) {
       const o = document.createElement('option');
       o.value = opt.key;
       o.textContent = opt.label;
-      select.appendChild(o);
+      ingSelect.appendChild(o);
     }
 
     const mass = document.createElement('input');
     mass.type = 'number';
     mass.min = '1';
     mass.value = '30';
-    mass.style.width = '90px';
+    mass.style.width = '70px';
+    mass.placeholder = 'г';
 
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.className = 'btn btn-primary btn-small';
-    addBtn.textContent = '+';
-    addBtn.addEventListener('click', () => {
-      const opt = INGREDIENT_OPTIONS.find((i) => i.key === select.value);
+    const addIngBtn = this.makeBtn('+ Ингр.', () => {
+      const opt = INGREDIENT_OPTIONS.find((i) => i.key === ingSelect.value);
       if (!opt) return;
       const m = Number(mass.value);
       if (!m || m <= 0) {
         alert('Введи положительную массу');
         return;
       }
-      try {
-        const ing = new opt.ctor(m);
-        this.appendElement(ing);
-      } catch (e) {
-        alert((e as Error).message);
-      }
+      targetArray.push(new opt.ctor(m));
+      onChanged();
     });
+    addIngBtn.classList.add('btn-primary');
 
-    controls.appendChild(select);
-    controls.appendChild(mass);
-    controls.appendChild(addBtn);
-
-    row.appendChild(label);
-    row.appendChild(controls);
-    return row;
-  }
-
-  private renderAddAction(): HTMLElement {
-    const row = document.createElement('div');
-    row.className = 'form-row';
-    const label = document.createElement('label');
-    label.textContent = 'Добавить действие';
-
-    const controls = document.createElement('div');
-    controls.style.display = 'flex';
-    controls.style.gap = '0.4rem';
-
-    const select = document.createElement('select');
+    const actSelect = document.createElement('select');
     for (const opt of ACTION_OPTIONS) {
       const o = document.createElement('option');
       o.value = opt.key;
       o.textContent = opt.label;
-      select.appendChild(o);
+      actSelect.appendChild(o);
     }
 
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.className = 'btn btn-primary btn-small';
-    addBtn.textContent = '+';
-    addBtn.addEventListener('click', () => {
-      const opt = ACTION_OPTIONS.find((a) => a.key === select.value);
+    const addActBtn = this.makeBtn('+ Действ.', () => {
+      const opt = ACTION_OPTIONS.find((a) => a.key === actSelect.value);
       if (!opt) return;
-      const action = opt.create([]);
-      this.appendElement(action);
+      targetArray.push(opt.create([]));
+      onChanged();
     });
+    addActBtn.classList.add('btn-primary');
 
-    controls.appendChild(select);
-    controls.appendChild(addBtn);
+    wrap.appendChild(ingSelect);
+    wrap.appendChild(mass);
+    wrap.appendChild(addIngBtn);
+    wrap.appendChild(actSelect);
+    wrap.appendChild(addActBtn);
 
-    row.appendChild(label);
-    row.appendChild(controls);
-    return row;
+    return wrap;
   }
 
-  private appendElement(el: Element): void {
+  private save(): void {
     if (this.state.activeId === null) return;
     const drink = this.state.repo.getById(this.state.activeId);
     if (!drink) return;
-    drink.addElement(el);
-    this.state.repo.update(drink.id, { elements: drink.elements });
-    this.state.emit();
-  }
-
-  private removeAt(index: number): void {
-    if (this.state.activeId === null) return;
-    const drink = this.state.repo.getById(this.state.activeId);
-    if (!drink) return;
-    drink.removeElementAt(index);
-    this.state.repo.update(drink.id, { elements: drink.elements });
-    this.state.emit();
-  }
-
-  private move(from: number, to: number): void {
-    if (this.state.activeId === null) return;
-    const drink = this.state.repo.getById(this.state.activeId);
-    if (!drink) return;
-    drink.moveElement(from, to);
     this.state.repo.update(drink.id, { elements: drink.elements });
     this.state.emit();
   }

@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm create:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npx vite:*)"
-    ]
-  }
-}
